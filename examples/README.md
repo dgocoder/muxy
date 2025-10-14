@@ -25,6 +25,34 @@ Perfect for:
 - Learning process orchestration
 - Screenshots and demos
 
+## `env-vars.yml`
+
+**Environment variable substitution** - Demonstrates dynamic configuration using environment variables
+
+```bash
+# Set some environment variables
+export API_PORT=5000
+export DB_HOST=postgres.local
+export NODE_ENV=production
+
+# Run the example
+muxy examples/env-vars.yml
+```
+
+Includes:
+
+- 🌍 Dynamic port configuration with `${VAR}` syntax
+- 🔧 Default values using `${VAR:-default}` pattern
+- 📁 Dynamic directory paths from environment
+- 🔗 Composed values (e.g., DATABASE_URL from multiple env vars)
+
+Perfect for:
+
+- Learning environment variable substitution
+- Multi-environment configurations (dev/staging/prod)
+- Docker and containerized deployments
+- CI/CD pipelines
+
 ## 🎨 Customizing the Example
 
 The example uses demo commands that simulate real services. To use with real projects:

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -852,6 +853,64 @@ func (s *offsetSurface) Size() (int, int) {
 	return w - s.offsetX, h - s.offsetY
 }
 
+// expandEnvVars replaces ${VAR} and ${VAR:-default} patterns with environment variable values
+func expandEnvVars(s string) string {
+	// Regex pattern to match ${VAR} or ${VAR:-default}
+	re := regexp.MustCompile(`\$\{([^}]+)\}`)
+
+	return re.ReplaceAllStringFunc(s, func(match string) string {
+		// Extract content between ${ and }
+		content := match[2 : len(match)-1]
+
+		// Check if it has a default value (VAR:-default)
+		var varName string
+		var defaultValue string
+		var hasDefault bool
+
+		if idx := strings.Index(content, ":-"); idx != -1 {
+			varName = content[:idx]
+			defaultValue = content[idx+2:]
+			hasDefault = true
+		} else {
+			varName = content
+		}
+
+		// Get the environment variable value
+		if value, exists := os.LookupEnv(varName); exists && value != "" {
+			return value
+		}
+
+		// Return default value if provided
+		if hasDefault {
+			return defaultValue
+		}
+
+		// Return original if variable doesn't exist and no default
+		return match
+	})
+}
+
+// expandConfigEnvVars expands environment variables in all string fields of the config
+func expandConfigEnvVars(config *Config) {
+	// Expand title and splash
+	config.Title = expandEnvVars(config.Title)
+	config.Splash = expandEnvVars(config.Splash)
+
+	// Expand each process's fields
+	for i := range config.Processes {
+		proc := &config.Processes[i]
+		proc.Name = expandEnvVars(proc.Name)
+		proc.Command = expandEnvVars(proc.Command)
+		proc.Directory = expandEnvVars(proc.Directory)
+		proc.Color = expandEnvVars(proc.Color)
+
+		// Expand environment variable values
+		for key, value := range proc.Environment {
+			proc.Environment[key] = expandEnvVars(value)
+		}
+	}
+}
+
 func loadConfig(filename string) (*Config, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -862,6 +921,9 @@ func loadConfig(filename string) (*Config, error) {
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
+
+	// Expand environment variables in the config
+	expandConfigEnvVars(&config)
 
 	return &config, nil
 }

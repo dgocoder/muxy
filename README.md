@@ -130,8 +130,8 @@ processes:
     directory: ./app # Optional: Working directory
     color: green # Optional: green|blue|red|yellow|magenta|cyan|white|gray
     autostart: true # Optional: Start automatically (default: true)
-    environment: # Optional: Environment variables
-      PORT: "3000"
+    environment: # Optional: Environment variables (values support ${VAR} substitution)
+      PORT: "${PORT:-3000}" # With default value
       NODE_ENV: dev
 ```
 
@@ -166,6 +166,29 @@ processes:
 ```
 
 ## 🔧 Advanced Features
+
+### Environment Variable Substitution
+
+muxy supports dynamic environment variable substitution using `${VAR_NAME}` syntax. This works in:
+- Process commands
+- Directory paths
+- Environment variable values
+- Any string field in the config
+
+```yaml
+processes:
+  - name: api
+    command: npm run dev
+    directory: ${WORK_DIR:-./backend}
+    environment:
+      PORT: "${API_PORT:-4000}"
+      DATABASE_URL: "postgresql://${DB_HOST:-localhost}:${DB_PORT:-5432}/${DB_NAME:-myapp}"
+      NODE_ENV: "${NODE_ENV:-development}"
+```
+
+**Default values:** Use `${VAR:-default}` syntax to provide fallback values when the environment variable is not set.
+
+See [`examples/env-vars.yml`](./examples/env-vars.yml) for a complete example.
 
 ### Manual Start Processes
 
